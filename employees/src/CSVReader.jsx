@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export const CSVReader = () => {
   const [csvFile, setCsvFile] = useState();
   const [employees, setEmployees] = useState([]);
   const [employeesPair, setEmployeesPair] = useState([]);
+  const headerKeys = ["ProjecID#1", "EmployeeID#1", "EmployeeId#2", "Days"];
   const oneDay = 24 * 60 * 60 * 1000;
+  
+  useEffect(() => {
+    const emplPair = empCombByPr(groupEmpByProj(employees));
+    setEmployeesPair(emplPair);
+  }, [employees]);
 
   const groupEmpByProj = (emp) => {
     return emp.reduce((acc, { EmpID, ProjectID, DateFrom, DateTo }) => {
@@ -31,7 +37,8 @@ export const CSVReader = () => {
         let max = elm.combinations.reduce((acm, currentEl) => {
           currentEl.map((x) =>
             x.days > maxDay
-              ? ((maxDay = x.days), (result[0] = [elm.ProjectId, x]))
+              ? ((maxDay = x.days),
+                (result[0] = { ProjectID: elm.ProjectId, ...x }))
               : null
           );
           return acm;
@@ -80,9 +87,10 @@ export const CSVReader = () => {
 
       return acc;
     }, []);
-    let finalResult = maxDays(a);
-    console.log(finalResult);
+
+    return maxDays(a);
   };
+
   const csvToArray = (csv) => {
     const csvHeader = csv.slice(0, csv.indexOf("\n")).split(",");
 
@@ -100,8 +108,6 @@ export const CSVReader = () => {
     });
 
     setEmployees(arrayEmployees);
-    const a = groupEmpByProj(employees);
-    const b = empCombByPr(a);
   };
 
   const handleImport = (e) => {
@@ -122,36 +128,45 @@ export const CSVReader = () => {
     }
   };
 
-  const headerKeys = Object.keys(Object.assign({}, ...employees));
+
+
+
 
   return (
     <div>
       <form>
         <input type={"file"} accept={".csv"} onChange={handleImport} />
-        <button>Import CSV File</button>
+        <button
+          onClick={handleSubmit}
+        >
+          Submit
+        </button>
       </form>
       <br />
-      <button onClick={handleSubmit}>Submit</button>
 
-      <table>
-        <thead>
-          <tr key={"header"}>
-            {headerKeys.map((key) => (
-              <th>{key}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {employees.map((item) => (
-            <tr key={item.id}>
-              {Object.values(item).map((val) => (
-                <td>{val}</td>
+      {employeesPair.length > 0 ? (
+        <table>
+          <thead>
+            <tr key={"header"}>
+              {headerKeys.map((el, index) => (
+                <th key={index}>{el}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {employeesPair.map((item) => (
+              <tr key={item.ProjectID}>
+                {Object.values(item).map((val, idex) => (
+                  <td key={idex}>{val}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        "No data to display"
+      )}
     </div>
   );
 };
