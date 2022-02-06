@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from "react";
 
 export const CSVReader = () => {
-  const [csvFile, setCsvFile] = useState();
+  const [csvFile, setCsvFile] = useState('');
   const [employees, setEmployees] = useState([]);
   const [employeesPair, setEmployeesPair] = useState([]);
   const headerKeys = ["ProjecID#1", "EmployeeID#1", "EmployeeId#2", "Days"];
   const oneDay = 24 * 60 * 60 * 1000;
-  
+
   useEffect(() => {
     const emplPair = empCombByPr(groupEmpByProj(employees));
     setEmployeesPair(emplPair);
   }, [employees]);
 
   const groupEmpByProj = (emp) => {
-    return emp.reduce((acc, { EmpID, ProjectID, DateFrom, DateTo }) => {
+    let res = emp.reduce((acc, { EmpID, ProjectID, DateFrom, DateTo }) => {
       let startDay = new Date(DateFrom);
       let endDay = Date.parse(DateTo) ? new Date(DateTo) : new Date();
       let obj = { ProjectID: ProjectID, Employees: [] };
@@ -27,6 +27,8 @@ export const CSVReader = () => {
       );
       return acc;
     }, []);
+
+    return res;
   };
 
   const maxDays = (data) => {
@@ -50,17 +52,22 @@ export const CSVReader = () => {
   };
 
   const empCombByPr = (emp) => {
-    let a = emp.reduce((acc, el) => {
+    let result = emp.reduce((acc, el) => {
       if (el.Employees.length > 1) {
         let combinations = el.Employees.reduce((arrComb, currentEm, index) => {
           let data = el.Employees.slice(index + 1).map((e) => {
             let result = [];
             if (
-              (currentEm.endDay <= e.endDay && currentEm.enD > e.startDay) ||
-              (e.endDay <= currentEm.endDay && e.endDay > currentEm.startDay) ||
+              (currentEm.startDay < e.startDay &&
+                currentEm.endDay <= e.endDay) ||
               (currentEm.startDay > e.startDay &&
-                currentEm.endDay < e.endDay) ||
-              (currentEm.startDay < e.startDay && currentEm.endDay > e.endDay)
+                e.endDay <= currentEm.endDay) ||
+              (currentEm.startDay >= e.startDay &&
+                currentEm.endDay <= e.endDay) ||
+              (currentEm.startDay <= e.startDay &&
+                currentEm.endDay >= e.endDay) ||
+              currentEm.startDay == e.endDay ||
+              e.startDay == currentEm.endDay
             ) {
               let firstDay =
                 currentEm.startDay > e.startDay
@@ -75,11 +82,13 @@ export const CSVReader = () => {
             }
             return result;
           });
+
           if (data.length > 0) {
             arrComb.push(...data);
           }
           return arrComb;
         }, []);
+
         if (combinations) {
           acc.push([{ ProjectId: el.ProjectID, combinations }]);
         }
@@ -88,7 +97,7 @@ export const CSVReader = () => {
       return acc;
     }, []);
 
-    return maxDays(a);
+    return maxDays(result);
   };
 
   const csvToArray = (csv) => {
@@ -125,47 +134,50 @@ export const CSVReader = () => {
         csvToArray(text);
       };
       reader.readAsText(file);
+  
     }
+
   };
-
-
-
-
 
   return (
     <div>
       <form>
-        <input type={"file"} accept={".csv"} onChange={handleImport} />
-        <button
-          onClick={handleSubmit}
-        >
-          Submit
-        </button>
+        <input
+          type={"file"}
+          accept={".csv"}
+          
+          onChange={handleImport}
+        />
+        <button onClick={handleSubmit}>Submit</button>
       </form>
       <br />
 
-      {employeesPair.length > 0 ? (
-        <table>
-          <thead>
-            <tr key={"header"}>
-              {headerKeys.map((el, index) => (
-                <th key={index}>{el}</th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {employeesPair.map((item) => (
-              <tr key={item.ProjectID}>
-                {Object.values(item).map((val, idex) => (
-                  <td key={idex}>{val}</td>
+      {employees.length > 0 ? (
+        employees.length > 0 && employeesPair.length === 0 ? (
+          "No valid combinations"
+        ) : (
+          <table>
+            <thead>
+              <tr key={"header"}>
+                {headerKeys.map((el, index) => (
+                  <th key={index}>{el}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {employeesPair.map((item) => (
+                <tr key={item.ProjectID}>
+                  {Object.values(item).map((val, idex) => (
+                    <td key={idex}>{val}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
       ) : (
-        "No data to display"
+        "Please Add CSV File"
       )}
     </div>
   );
