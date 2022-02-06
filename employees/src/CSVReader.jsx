@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-
+import "./CSVReader.css";
 export const CSVReader = () => {
-  const [csvFile, setCsvFile] = useState('');
+  const [csvFile, setCsvFile] = useState("");
   const [employees, setEmployees] = useState([]);
   const [employeesPair, setEmployeesPair] = useState([]);
-  const headerKeys = ["ProjecID#1", "EmployeeID#1", "EmployeeId#2", "Days"];
+  const headerKeys = ["ProjecID", "EmployeeID#1", "EmployeeId#2", "Days"];
   const oneDay = 24 * 60 * 60 * 1000;
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export const CSVReader = () => {
   };
 
   const maxDays = (data) => {
-    let maxDay = 0;
+    let maxDay = -1;
     let result = [];
     data.map((el) => {
       return el.map((elm) => {
@@ -57,6 +57,7 @@ export const CSVReader = () => {
         let combinations = el.Employees.reduce((arrComb, currentEm, index) => {
           let data = el.Employees.slice(index + 1).map((e) => {
             let result = [];
+
             if (
               (currentEm.startDay < e.startDay &&
                 currentEm.endDay <= e.endDay) ||
@@ -64,10 +65,7 @@ export const CSVReader = () => {
                 e.endDay <= currentEm.endDay) ||
               (currentEm.startDay >= e.startDay &&
                 currentEm.endDay <= e.endDay) ||
-              (currentEm.startDay <= e.startDay &&
-                currentEm.endDay >= e.endDay) ||
-              currentEm.startDay == e.endDay ||
-              e.startDay == currentEm.endDay
+              (currentEm.startDay <= e.startDay && currentEm.endDay >= e.endDay)
             ) {
               let firstDay =
                 currentEm.startDay > e.startDay
@@ -80,6 +78,7 @@ export const CSVReader = () => {
 
               result.push({ emplA: currentEm.EmpID, emplB: e.EmpID, days });
             }
+
             return result;
           });
 
@@ -134,20 +133,14 @@ export const CSVReader = () => {
         csvToArray(text);
       };
       reader.readAsText(file);
-  
     }
-
   };
 
   return (
     <div>
       <form>
-        <input
-          type={"file"}
-          accept={".csv"}
-          
-          onChange={handleImport}
-        />
+        <input type={"file"} accept={".csv"} onChange={handleImport} />
+
         <button onClick={handleSubmit}>Submit</button>
       </form>
       <br />
@@ -156,7 +149,7 @@ export const CSVReader = () => {
         employees.length > 0 && employeesPair.length === 0 ? (
           "No valid combinations"
         ) : (
-          <table>
+          <table className="center">
             <thead>
               <tr key={"header"}>
                 {headerKeys.map((el, index) => (
